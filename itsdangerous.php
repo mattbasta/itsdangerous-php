@@ -173,6 +173,33 @@ class Serializer {
     public function load($f) {
         return $this->loads(fread($f, filesize($f)));
     }
+    
+    public function _urlsafe_load_payload($payload){
+    	$decompress = false;
+		if ($payload[0] == '.'){
+			$payload = substr($payload, 1);
+			$decompress = true;
+		}
+		$json = base64_decode_url($payload);
+		if ($decompress){
+			$json = gzuncompress($json);
+		}
+		return $json;
+	}
+	
+	public function _urlsafe_dump_payload($json){
+		$is_compressed = false;
+		$compressed = gzcompress($json);
+		if (strlen($compressed) < strlen($json) - 1){
+			$json = $compressed;
+			$is_compressed = true;
+		}
+		$base64d = base64_encode_url($json);
+		if ($is_compressed){
+			$base64d = '.' . $base64d;
+		}
+		return $base64d;
+	}
 
 }
 
@@ -194,4 +221,29 @@ class TimedSerializer extends Serializer {
     }
 
 }
+
+class URLSafeSerializer extends Serializer {
+    	
+	public function load_payload($payload){
+		return parent::load_payload($this->_urlsafe_load_payload($payload));
+	}
+	
+	public function dump_payload($obj){
+		return $this->_urlsafe_dump_payload(parent::dump_payload($obj));
+	}
+    
+}
+
+class URLSafeTimedSerializer extends TimedSerializer {
+		
+	public function load_payload($payload){
+		return parent::load_payload($this->_urlsafe_load_payload($payload));
+	}
+	
+	public function dump_payload($obj){
+		return $this->_urlsafe_dump_payload(parent::dump_payload($obj));
+	}
+    
+}
+
 
