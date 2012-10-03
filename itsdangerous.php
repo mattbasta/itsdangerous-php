@@ -25,12 +25,12 @@ function int_to_bytes($num) {
         $output .= chr($num & 0xff);
         $num >>= 8;
     }
-    return $output;
+    return strrev($output);
 }
 
 function bytes_to_int($bytes) {
     $output = 0;
-    foreach(str_split(strrev($bytes)) as $byte) {
+    foreach(str_split($bytes) as $byte) {
         if($output > 0)
             $output <<= 8;
         $output += ord($byte);
@@ -40,7 +40,7 @@ function bytes_to_int($bytes) {
 
 class Signer {
 
-    public static function digest_method($input) {return sha1($input);}
+    public static function digest_method($input) {return sha1($input, true);}
 
     public function __construct($secret_key, $salt=null, $sep='.') {
         $this->secret_key = $secret_key;
@@ -50,7 +50,7 @@ class Signer {
 
     public function get_signature($value) {
         $key = self::digest_method($this->salt . 'signer' . $this->secret_key);
-        $mac = hash_hmac("sha1", $value, $key);
+        $mac = hash_hmac("sha1", $value, $key, true);
         return base64_encode_url($mac);
     }
 
