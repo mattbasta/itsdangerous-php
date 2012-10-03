@@ -25,12 +25,12 @@ function int_to_bytes($num) {
         $output .= chr($num & 0xff);
         $num >>= 8;
     }
-    return $output;
+    return strrev($output);
 }
 
 function bytes_to_int($bytes) {
     $output = 0;
-    foreach(str_split(strrev($bytes)) as $byte) {
+    foreach(str_split($bytes) as $byte) {
         if($output > 0)
             $output <<= 8;
         $output += ord($byte);
