@@ -40,16 +40,37 @@ function bytes_to_int($bytes) {
 
 class Signer {
 
-    public static function digest_method($input) {return sha1($input, true);}
+    public static $default_digest_method = 'sha1';
+    public static $default_key_derivation = 'django-concat';
 
-    public function __construct($secret_key, $salt=null, $sep='.') {
+    public function __construct($secret_key, $salt=null, $sep='.', $key_derivation=null, $digest_method=null) {
         $this->secret_key = $secret_key;
         $this->sep = $sep;
-        $this->salt = is_null($salt) ? __FILE__ : $salt;
+        $this->salt = is_null($salt) ? 'itsdangerous.Signer' : $salt;
+        $this->key_derivation = is_null($key_derivation) ? self::$default_key_derivation : $key_derivation;
+        $this->digest_method = is_null($digest_method) ? self::$default_digest_method : $digest_method;
+    }
+    
+    private function digest($input) {
+        $dm = $this->digest_method;
+        return $dm($input, true);
+    }
+    
+    public function derive_key() {
+    	switch ($this->key_derivation) {
+    	    case 'concat':
+                return $this->digest($this->salt . $this->secret_key);
+            case 'django-concat':
+                return $this->digest($this->salt . 'signer' . $this->secret_key);
+            case 'hmac':
+                return hash_hmac($this->digest_method, $this->salt, $this->secret_key, true);
+            default:
+                throw new Exception("Unknown key derivation method");
+    	}
     }
 
     public function get_signature($value) {
-        $key = self::digest_method($this->salt . 'signer' . $this->secret_key);
+        $key = $this->derive_key();
         $mac = hash_hmac("sha1", $value, $key, true);
         return base64_encode_url($mac);
     }
