@@ -44,15 +44,3 @@ try {
 } catch (Exception $e){
     echo $e->getMessage(), NL, NL;
 }
-
-$s1 = new URLSafeSerializer("secret");
-$c = $s1->dumps($complex);
-echo $c, NL;
-var_dump($s1->loads($c));
-echo NL;
-
-$s1 = new URLSafeTimedSerializer("secret");
-$c = $s1->dumps($complex);
-echo $c, NL;
-var_dump($s1->loads($c));
-echo NL;

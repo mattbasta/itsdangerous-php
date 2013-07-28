@@ -4,6 +4,6 @@ A PHP port of itsdangerous by @mitsuhiko
 
 ## Differences from itsdangerous
 
-1. `Signer`s cannot be specified in the constructor of a `Serializer`.
-2. `salt` cannot be specified in the methods of a `Serializer`. You should create new instances of the `Serializer` instead.
-
+1. `Signer` arguments cannot be specified in the constructor of a `Serializer`.
+2. JWS classes are not implemented.
+3. URL-safe classes are not implemented.
