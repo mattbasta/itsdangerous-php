@@ -185,7 +185,7 @@ class TimestampSigner extends Signer {
     }
 
     public function timestamp_to_datetime($ts) {
-        return new DateTime($ts + EPOCH, new DateTimeZone("UTC"));
+        return DateTime::createFromFormat("U", $ts + EPOCH, new DateTimeZone("UTC"));
     }
 
     public function sign($value) {
@@ -200,7 +200,7 @@ class TimestampSigner extends Signer {
             $result = parent::unsign($value);
             $sig_err = null;
         } catch (BadSignature $ex) {
-            $sig_error = $ex;
+            $sig_err = $ex;
             $result = $ex->payload;
         }
 
