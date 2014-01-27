@@ -196,18 +196,9 @@ class TimestampSigner extends Signer {
 
     public function unsign($value, $max_age=null, $return_timestamp=false) {
 
-        try {
-            $result = parent::unsign($value);
-            $sig_err = null;
-        } catch (BadSignature $ex) {
-            $sig_err = $ex;
-            $result = $ex->payload;
-        }
+        $result = parent::unsign($value);
 
         if(strpos($result, $this->sep) === false) {
-            if (!is_null($sig_err)) {
-                throw $sig_err;
-            }
             throw new BadTimeSignature("timestamp missing", $result);
         }
 
