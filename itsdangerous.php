@@ -122,11 +122,11 @@ class Signer {
         $this->digest_method = is_null($digest_method) ? self::$default_digest_method : $digest_method;
         $this->algorithm = is_null($algorithm) ? new HMACAlgorithm($this->digest_method) : $algorithm;
     }
-    
+
     protected function digest($input) {
         return hash($this->digest_method, $input, true);
     }
-    
+
     public function derive_key() {
     	switch ($this->key_derivation) {
     	    case 'concat':
@@ -220,6 +220,16 @@ class TimestampSigner extends Signer {
         } catch (Exception $ex) {
             $timestamp = null;
         }
+
+        # Signature is *not* okay.  Raise a proper error now that we have
+        # split the value and the timestamp.
+        if (!is_null($sig_error))
+            throw new BadTimeSignature((string) $sig_error, $value, $timestamp);
+
+        # Signature was okay but the timestamp is actually not there or
+        # malformed.  Should not happen, but well.  We handle it nonetheless
+        if (is_null($timestamp))
+            throw new BadTimeSignature('Malformed timestamp', $value);
 
         if(!is_null($max_age)) {
             $age = $this->get_timestamp() - $timestamp;
@@ -348,11 +358,11 @@ class Serializer {
         $json = base64_decode_($payload);
         if ($decompress){
             $json = gzuncompress($json);
-            
+
         }
         return $json;
     }
-    
+
     public function _urlsafe_dump_payload($json){
         $is_compressed = false;
         $compressed = gzcompress($json);
@@ -362,7 +372,7 @@ class Serializer {
         }
         $base64d = base64_encode_($json);
         if ($is_compressed){
-            $base64d = '.' . $base64d;    
+            $base64d = '.' . $base64d;
         }
         return $base64d;
     }
@@ -411,26 +421,26 @@ class TimedSerializer extends Serializer {
 
 /*
 class URLSafeSerializer extends Serializer {
-    	
+
     public function load_payload($payload){
         return parent::load_payload($this->_urlsafe_load_payload($payload));
     }
-	
+
     public function dump_payload($obj){
         return $this->_urlsafe_dump_payload(parent::dump_payload($obj));
     }
-    
+
 }
 
 class URLSafeTimedSerializer extends TimedSerializer {
-		
+
     public function load_payload($payload){
         return parent::load_payload($this->_urlsafe_load_payload($payload));
     }
-	
+
     public function dump_payload($obj){
         return $this->_urlsafe_dump_payload(parent::dump_payload($obj));
     }
-    
+
 }
 */
