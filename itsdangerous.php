@@ -223,8 +223,8 @@ class TimestampSigner extends Signer {
 
         # Signature is *not* okay.  Raise a proper error now that we have
         # split the value and the timestamp.
-        if (!is_null($sig_error))
-            throw new BadTimeSignature((string) $sig_error, $value, $timestamp);
+        if (!is_null($sig_err))
+            throw new BadTimeSignature((string) $sig_err, $value, $timestamp);
 
         # Signature was okay but the timestamp is actually not there or
         # malformed.  Should not happen, but well.  We handle it nonetheless
