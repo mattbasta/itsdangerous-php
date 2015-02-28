@@ -1,7 +1,6 @@
 {
     "name": "mattbasta/itsdangerous-php",
-    "description": "A PHP port of itsdangerous by @mitsuhiko - Various helpers to pass data to untrusted environments and to get it back
-safe and sound.",
+    "description": "A PHP port of itsdangerous by @mitsuhiko - Various helpers to pass data to untrusted environments and to get it back safe and sound.",
     "require": {
         "php": ">=5.3.0"
     }
