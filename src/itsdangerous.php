@@ -42,33 +42,6 @@ class BadTimeSignature extends BadData {
 class SignatureExpired extends BadTimeSignature {}
 
 
-function base64_encode_($data) {
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-}
-
-function base64_decode_($data) {
-    return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
-}
-
-function int_to_bytes($num) {
-    $output = "";
-    while($num > 0) {
-        $output .= chr($num & 0xff);
-        $num >>= 8;
-    }
-    return strrev($output);
-}
-
-function bytes_to_int($bytes) {
-    $output = 0;
-    foreach(str_split($bytes) as $byte) {
-        if($output > 0)
-            $output <<= 8;
-        $output += ord($byte);
-    }
-    return $output;
-}
-
 abstract class SigningAlgorithm {
     abstract public function get_signature($key, $value);
 
@@ -143,7 +116,7 @@ class Signer {
     public function get_signature($value) {
         $key = $this->derive_key();
         $sig = $this->algorithm->get_signature($key, $value);
-        return base64_encode_($sig);
+        return self::base64_encode_($sig);
     }
 
     public function sign($value) {
@@ -152,7 +125,7 @@ class Signer {
 
     public function verify_signature($value, $sig) {
         $key = $this->derive_key();
-        $sig = base64_decode_($sig);
+        $sig = self::base64_decode_($sig);
         return $this->algorithm->verify_signature($key, $value, $sig);
     }
 
@@ -176,6 +149,14 @@ class Signer {
         }
     }
 
+    protected static function base64_encode_($data) {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    protected static function base64_decode_($data) {
+        return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
+    }
+
 }
 
 class TimestampSigner extends Signer {
@@ -189,7 +170,7 @@ class TimestampSigner extends Signer {
     }
 
     public function sign($value) {
-        $timestamp = base64_encode_(int_to_bytes($this->get_timestamp()));
+        $timestamp = self::base64_encode_(self::int_to_bytes($this->get_timestamp()));
         $value = $value . $this->sep . $timestamp;
         return $value . $this->sep . $this->get_signature($value);
     }
@@ -216,7 +197,7 @@ class TimestampSigner extends Signer {
         $value = implode($this->sep, $exploded);
 
         try {
-            $timestamp = bytes_to_int(base64_decode_($timestamp));
+            $timestamp = self::bytes_to_int(self::base64_decode_($timestamp));
         } catch (Exception $ex) {
             $timestamp = null;
         }
@@ -252,6 +233,25 @@ class TimestampSigner extends Signer {
         } catch(Exception $ex) {
             return false;
         }
+    }
+
+    protected static function int_to_bytes($num) {
+        $output = "";
+        while($num > 0) {
+            $output .= chr($num & 0xff);
+            $num >>= 8;
+        }
+        return strrev($output);
+    }
+
+    protected static function bytes_to_int($bytes) {
+        $output = 0;
+        foreach(str_split($bytes) as $byte) {
+            if($output > 0)
+                $output <<= 8;
+            $output += ord($byte);
+        }
+        return $output;
     }
 
 }
@@ -348,35 +348,6 @@ class Serializer {
         return $this->loads_unsafe(fread($f, filesize($f)), $salt);
     }
 
-    /*
-    public function _urlsafe_load_payload($payload){
-        $decompress = false;
-        if ($payload[0] == '.'){
-            $payload = substr($payload, 1);
-            $decompress = true;
-        }
-        $json = base64_decode_($payload);
-        if ($decompress){
-            $json = gzuncompress($json);
-
-        }
-        return $json;
-    }
-
-    public function _urlsafe_dump_payload($json){
-        $is_compressed = false;
-        $compressed = gzcompress($json);
-        if (strlen($compressed) < strlen($json) - 1){
-            $json = $compressed;
-            $is_compressed = true;
-        }
-        $base64d = base64_encode_($json);
-        if ($is_compressed){
-            $base64d = '.' . $base64d;
-        }
-        return $base64d;
-    }
-    */
 }
 
 
