@@ -1,0 +1,6 @@
+*.sw*
+*~
+*.sublime-workspace
+composer.lock
+vendor/
+server/public/test/coverage/
