@@ -1,10 +1,17 @@
 <?php
 
-require_once('PHP/Token/Stream/Autoload.php');
+use Carbon\Carbon;
+
 require_once 'itsdangerous.php';
 
 class ExerciseTest extends PHPUnit_Framework_TestCase
 {
+
+    public function tearDown()
+    {
+        Carbon::setTestNow();
+    }
+
 
     public function testSigner_useNoneAlgorithm_shouldHaveNoSignature()
     {
@@ -95,10 +102,12 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testTimestampSigner_signAndUnsign_shouldBeCongruent()
     {
+        $nowString = '2016-01-10 08:12:31';
+        Carbon::setTestNow(new Carbon($nowString));
+
         $ts = new TimestampSigner("another_secret");
         $foo = $ts->sign("haldo");
-        // TODO: decouple from time() so that a test like this could be done
-        // $this->assertEquals($foo, 'haldo.TODO');
+        $this->assertEquals($foo, 'haldo.CXOj7w.soK7_HnTROV4Lew0zlxDV0mUE8I');
 
         $bar = $ts->unsign($foo);
         $this->assertEquals($bar, 'haldo');
@@ -109,25 +118,63 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
         $ts = new TimestampSigner("another_secret");
         $foo = $ts->sign("haldo");
 
-        $valid = $ts->validate($foo);
+        $valid = $ts->validate($foo, 30);
 
         $this->assertTrue($valid);
     }
 
     public function testTimestampSigner_signAndValidateLater_shouldFail()
     {
-        $this->markTestSkipped('Too slow!');
+        $nowString = '2016-01-10 08:12:31';
+        Carbon::setTestNow(new Carbon($nowString));
 
         $ts = new TimestampSigner("another_secret");
         $foo = $ts->sign("haldo");
 
-        // TODO: decouple from time() so that a test like this could be done in unit time
-        sleep(2);
+        // an hour later...
+        $nowString = '2016-01-10 09:12:31';
+        Carbon::setTestNow(new Carbon($nowString));
 
-        $valid = $ts->validate($foo, 0);
+        // 30 minute expiry
+        $valid = $ts->validate($foo, 30);
 
         $this->assertFalse($valid);
     }
+
+    public function testTimestampSigner_unsignTamperedData_shouldFail()
+    {
+        $this->setExpectedException('BadTimeSignature');
+
+        $nowString = '2016-01-10 08:12:31';
+        Carbon::setTestNow(new Carbon($nowString));
+
+        $ts = new TimestampSigner("another_secret");
+        $ts->unsign('haldo.CXOj7v.soK7_HnTROV4Lew0zlxDV0mUE8I');
+    }
+
+    public function testTimestampSigner_unsignMissingTimestamp_shouldFail()
+    {
+        $this->setExpectedException('BadTimeSignature');
+
+        $nowString = '2016-01-10 08:12:31';
+        Carbon::setTestNow(new Carbon($nowString));
+
+        $ts = new TimestampSigner("secret");
+        $ts->unsign('hello.7KTthSs1fJgtbigPvFpQH1bpoGA');
+    }
+
+    public function testTimestampSigner_unsignMissingTimestampTampered_shouldFail()
+    {
+        $this->setExpectedException('BadSignature');
+
+        $nowString = '2016-01-10 08:12:31';
+        Carbon::setTestNow(new Carbon($nowString));
+
+        $ts = new TimestampSigner("secret");
+        $ts->unsign('hillo.7KTthSs1fJgtbigPvFpQH1bpoGA');
+    }
+
+
 
     private $complex = array(
         "foo",
@@ -144,10 +191,10 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($c, $this->signedJSON);
 
         $cp = $ser->loads($c);
-        $this->assertEquals($cp, $this->complex);
+        $this->assertEquals($this->complex, $cp);
     }
 
-    public function testSerializer_jsonDumpsAndLoadsWithDifferentSecret_shouldThrow()
+    public function testSerializer_jsonLoadsWithDifferentSecret_shouldThrow()
     {
         $this->setExpectedException('BadSignature');
 
@@ -155,7 +202,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
         $cp = $ser->loads($this->signedJSON);
     }
 
-    public function testSerializer_jsonDumpsAndLoadsTamperedData_shouldFail()
+    public function testSerializer_jsonLoadsTamperedData_shouldFail()
     {
         $this->setExpectedException('BadSignature');
 
@@ -163,7 +210,33 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
         $cp = $ser->loads($this->tamperedJSON);
     }
 
-    public function testSerializer_serializerThrows_shouldFail()
+    public function testSerializer_dump_shouldWriteSignedPayloadDumpToFile()
+    {
+        $fp = fopen('php://temp', 'r+');
+
+        $ser = new Serializer("asecret");
+        $ser->dump($this->complex, $fp);
+
+        rewind($fp);
+        $wasWritten = fread($fp, 8192);
+        $this->assertEquals($this->signedJSON, $wasWritten);
+    }
+
+    // TODO: the method this tests is broken.
+    // public function testSerializer_load_shouldReadSignedPayloadFromFile()
+    // {
+
+    //     $fp = fopen('php://temp', 'r+');
+    //     fwrite($fp, $this->signedJSON);
+    //     rewind($fp);
+
+    //     $ser = new Serializer("asecret");
+    //     $wasRead = $ser->load($tmpfname);
+
+    //     $this->assertEquals($this->complex, $wasRead);
+    // }
+
+    public function testSerializer_serializerThrowsAtLoads_shouldFail()
     {
         // $this->markTestIncomplete('Upstream has + instead of . for string concat.'.
         //     ' Need to fix that and update ths test.');
@@ -172,7 +245,44 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
         $angry = new angrySerializer();
 
         $ser = new Serializer("asecret", 'itsdangerous', $angry);
-        $cp = $ser->loads('["hello":"there"].R3uKor5hg5Eh96fmCJ0Aic-BHaU');
+        $cp = $ser->loads($this->signedJSON);
+    }
+
+    public function testSerializer_loadsUnsafe_happyFunFunTime()
+    {
+        $ser = new Serializer("asecret");
+        $cp = $ser->loads_unsafe($this->signedJSON);
+        $this->assertEquals([true, $this->complex], $cp);
+    }
+
+    public function testSerializer_loadsUnsafeWrongSecret_shouldNoteUntrustworthy()
+    {
+        $ser = new Serializer("notasecret");
+        $cp = $ser->loads_unsafe($this->signedJSON);
+        $this->assertEquals([false, $this->complex], $cp);
+    }
+
+    public function testSerializer_loadsUnsafeTamperedData_shouldNoteUntrustworthy()
+    {
+        $ser = new Serializer("asecret");
+        $cp = $ser->loads_unsafe($this->tamperedJSON);
+        $this->assertEquals(false, $cp[0]);
+    }
+
+    public function testSerializer_loadsUnsafeExplodingTeaPot_shouldNoteThatSomethingBeWrong()
+    {
+        $angry = new angrySerializer();
+
+        $ser = new Serializer("asecret", 'itsdangerous', $angry);
+        $cp = $ser->loads_unsafe($this->signedJSON);
+    }
+
+    public function testSerializer_loadsUnsafeBadSalt_shouldNoteThatSomethingBeWrong()
+    {
+        $angry = new angrySerializer();
+
+        $ser = new Serializer("asecret", 'itsdangerous', $angry);
+        $cp = $ser->loads_unsafe($this->signedJSON);
     }
 
 }

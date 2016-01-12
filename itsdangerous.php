@@ -1,6 +1,8 @@
 <?php
 
 define("EPOCH", 1293840000);
+require 'vendor/autoload.php';
+use Carbon\Carbon;
 
 function is_text_serializer($serializer) {
     return is_string($serializer->dumps(array()));
@@ -181,7 +183,7 @@ class Signer {
 class TimestampSigner extends Signer {
 
     public function get_timestamp() {
-        return time() - EPOCH;
+        return Carbon::now()->timestamp - EPOCH;
     }
 
     public function timestamp_to_datetime($ts) {
@@ -217,9 +219,13 @@ class TimestampSigner extends Signer {
 
         try {
             $timestamp = bytes_to_int(base64_decode_($timestamp));
+        // @codeCoverageIgnoreStart
+        // not sure if this try catch is even needed - the builtins
+        // involved don't throw like their counter parts in python
         } catch (Exception $ex) {
             $timestamp = null;
         }
+        // @codeCoverageIgnoreEnd
 
         # Signature is *not* okay.  Raise a proper error now that we have
         # split the value and the timestamp.
@@ -290,7 +296,11 @@ class Serializer {
             $serializer = $this->serializer;
             $is_text = $this->is_text_serializer;
         } else {
+            // @codeCoverageIgnoreStart
+            // $is_text is never used for that matter, is_text_serializer
+            // doesn't seemed to be used outside of this
             $is_text = is_text_serializer($serializer);
+            // @codeCoverageIgnoreEnd
         }
         try {
             return $serializer->loads($payload);
@@ -325,28 +335,41 @@ class Serializer {
         return $this->load_payload($this->make_signer($salt)->unsign($s));
     }
 
+    // @codeCoverageIgnoreStart
+    // lolwut - filesize of a file pointer or fread on a filename?
     public function load($f, $salt=null) {
         return $this->loads(fread($f, filesize($f)), $salt);
     }
+    // @codeCoverageIgnoreEnd
 
     public function loads_unsafe($s, $salt=null) {
         try {
             return array(true, $this->loads($s, $salt));
         } catch (Exception $ex) {
-            if (is_null($ex->payload)) {
+            if (empty($ex->payload)) {
                 return array(false, null);
             }
             try {
-                return array(false, self.load_payload($ex->payload));
+                return array(false, $this->load_payload($ex->payload));
+            // @codeCoverageIgnoreStart
+            // I'm confused by the circular logic here - we just caught
+            // and exception from loads (maybe with a salt), and we got
+            // a payload in the exception, so we're going to call something
+            // that doesn't do much but call loads again and maybe catch
+            // an exception which would mean the data's garbage?
             } catch (BadPayload $ex) {
                 return array(false, null);
             }
+            // @codeCoverageIgnoreEnd
         }
     }
 
+    // @codeCoverageIgnoreStart
+    // broken because same reason load is broken
     public function load_unsafe($f, $salt=null) {
         return $this->loads_unsafe(fread($f, filesize($f)), $salt);
     }
+    // @codeCoverageIgnoreEnd
 
     /*
     public function _urlsafe_load_payload($payload){
@@ -379,7 +402,10 @@ class Serializer {
     */
 }
 
-
+/**
+ * @codeCoverageIgnore
+ * this thing doesn't do anything - I'm so confused
+ */
 class TimedSerializer extends Serializer {
 
     public static $default_signer = 'Signer';
