@@ -1,6 +1,9 @@
 <?php
 
 use Carbon\Carbon;
+use ItsDangerous\Signer\Signer;
+use ItsDangerous\Signer\TimestampSigner;
+use ItsDangerous\Signer\Serializer;
 
 require_once 'itsdangerous.php';
 
@@ -13,9 +16,10 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
     }
 
 
+
     public function testSigner_useNoneAlgorithm_shouldHaveNoSignature()
     {
-        $algo = new NoneAlgorithm();
+        $algo = new ItsDangerous\Signer\NoneAlgorithm();
         $s = new Signer("secret", null, '.', null, null, $algo);
         $foo = $s->sign("hello");
         $this->assertEquals('hello.', $foo);
@@ -26,7 +30,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testHMACAlgorithm_defaultSHA1_shouldWork()
     {
-        $algo = new HMACAlgorithm();
+        $algo = new ItsDangerous\Signer\HMACAlgorithm();
         $s = new Signer("secret", null, '.', null, null, $algo);
         $foo = $s->sign("hello");
         $this->assertEquals('hello.7KTthSs1fJgtbigPvFpQH1bpoGA', $foo);
@@ -47,7 +51,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testSigner_unsignTamperedData_shouldChoke()
     {
-        $this->setExpectedException('BadSignature');
+        $this->setExpectedException('ItsDangerous\BadData\BadSignature');
 
         $s = new Signer("secret");
         $bar = $s->unsign('hallo.7KTthSs1fJgtbigPvFpQH1bpoGA');
@@ -143,7 +147,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testTimestampSigner_unsignTamperedData_shouldFail()
     {
-        $this->setExpectedException('BadTimeSignature');
+        $this->setExpectedException('ItsDangerous\BadData\BadTimeSignature');
 
         $nowString = '2016-01-10 08:12:31';
         Carbon::setTestNow(new Carbon($nowString));
@@ -154,7 +158,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testTimestampSigner_unsignMissingTimestamp_shouldFail()
     {
-        $this->setExpectedException('BadTimeSignature');
+        $this->setExpectedException('ItsDangerous\BadData\BadTimeSignature');
 
         $nowString = '2016-01-10 08:12:31';
         Carbon::setTestNow(new Carbon($nowString));
@@ -165,7 +169,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testTimestampSigner_unsignMissingTimestampTampered_shouldFail()
     {
-        $this->setExpectedException('BadSignature');
+        $this->setExpectedException('ItsDangerous\BadData\BadSignature');
 
         $nowString = '2016-01-10 08:12:31';
         Carbon::setTestNow(new Carbon($nowString));
@@ -196,7 +200,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testSerializer_jsonLoadsWithDifferentSecret_shouldThrow()
     {
-        $this->setExpectedException('BadSignature');
+        $this->setExpectedException('ItsDangerous\BadData\BadSignature');
 
         $ser = new Serializer("whatevs");
         $cp = $ser->loads($this->signedJSON);
@@ -204,7 +208,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
 
     public function testSerializer_jsonLoadsTamperedData_shouldFail()
     {
-        $this->setExpectedException('BadSignature');
+        $this->setExpectedException('ItsDangerous\BadData\BadSignature');
 
         $ser = new Serializer("asecret");
         $cp = $ser->loads($this->tamperedJSON);
@@ -241,7 +245,7 @@ class ExerciseTest extends PHPUnit_Framework_TestCase
         // $this->markTestIncomplete('Upstream has + instead of . for string concat.'.
         //     ' Need to fix that and update ths test.');
 
-        $this->setExpectedException('BadPayload');
+        $this->setExpectedException('ItsDangerous\BadData\BadPayload');
         $angry = new angrySerializer();
 
         $ser = new Serializer("asecret", 'itsdangerous', $angry);
