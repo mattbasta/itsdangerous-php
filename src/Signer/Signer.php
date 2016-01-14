@@ -2,7 +2,6 @@
 
 namespace ItsDangerous\Signer;
 
-use ItsDangerous\Signer\HMACAlgorithm;
 use ItsDangerous\BadData\BadSignature;
 
 class Signer {
@@ -31,8 +30,8 @@ class Signer {
     }
 
     public function derive_key() {
-    	switch ($this->key_derivation) {
-    	    case 'concat':
+        switch ($this->key_derivation) {
+            case 'concat':
                 return $this->digest($this->salt . $this->secret_key);
             case 'django-concat':
                 return $this->digest($this->salt . 'signer' . $this->secret_key);
@@ -40,7 +39,7 @@ class Signer {
                 return hash_hmac($this->digest_method, $this->salt, $this->secret_key, true);
             default:
                 throw new \Exception("Unknown key derivation method");
-    	}
+        }
     }
 
     public function get_signature($value) {
@@ -60,13 +59,15 @@ class Signer {
     }
 
     public function unsign($signed_value) {
-        if(strpos($signed_value, $this->sep) === false)
+        if(strpos($signed_value, $this->sep) === false) {
             throw new BadSignature("No \"{$this->sep}\" found in value");
+        }
         $exploded = explode($this->sep, $signed_value);
         $sig = array_pop($exploded);
         $value = implode($this->sep, $exploded);
-        if($this->verify_signature($value, $sig))
+        if($this->verify_signature($value, $sig)) {
             return $value;
+        }
         throw new BadSignature("Signature \"{$sig}\" does not match", $value);
     }
 
