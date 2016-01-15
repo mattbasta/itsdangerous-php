@@ -23,6 +23,14 @@ class SignerTest extends PHPUnit_Framework_TestCase
         $bar = $s->unsign('hallo.7KTthSs1fJgtbigPvFpQH1bpoGA');
     }
 
+    public function testSigner_unsignMalformedData_shouldChoke()
+    {
+        $this->setExpectedException('ItsDangerous\BadData\BadSignature');
+
+        $s = new Signer("secret");
+        $bar = $s->unsign('hallo7KTthSs1fJgtbigPvFpQH1bpoGA');
+    }
+
     public function testSigner_deriveKeyByConcat_shouldWork()
     {
         $s = new Signer("secret", 'salty', '.', 'concat');
