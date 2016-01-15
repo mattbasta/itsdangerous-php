@@ -3,10 +3,6 @@
 define("EPOCH", 1293840000);
 require 'vendor/autoload.php';
 
-function is_text_serializer($serializer) {
-    return is_string($serializer->dumps(array()));
-}
-
 function constant_time_compare($val1, $val2) {
     $s = strlen($val1);
     if($s != strlen($val2)) return false;

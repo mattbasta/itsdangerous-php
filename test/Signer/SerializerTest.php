@@ -1,6 +1,7 @@
 <?php
 
 use ItsDangerous\Signer\Serializer;
+use ItsDangerous\BadData\BadSignature;
 
 class SerializerTest extends PHPUnit_Framework_TestCase
 {
@@ -9,6 +10,7 @@ class SerializerTest extends PHPUnit_Framework_TestCase
         123,
         array(1.1, 2.2, "3.3")
     );
+    private $unSignedJSON = '["foo",123,[1.1,2.2,"3.3"]]';
     private $signedJSON = '["foo",123,[1.1,2.2,"3.3"]].z6C_xbVNJ1fzlWOePnZKBC-AfiQ';
     private $tamperedJSON = '["foo",122,[1.1,2.2,"3.3"]].z6C_xbVNJ1fzlWOePnZKBC-AfiQ';
 
@@ -50,25 +52,57 @@ class SerializerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($this->signedJSON, $wasWritten);
     }
 
-    // TODO: the method this tests is broken.
-    // public function testSerializer_load_shouldReadSignedPayloadFromFile()
-    // {
+    public function testSerializer_load_shouldReadSignedPayloadFromFile()
+    {
+        $fp = fopen('php://temp', 'r+');
+        fwrite($fp, $this->signedJSON);
+        rewind($fp);
 
-    //     $fp = fopen('php://temp', 'r+');
-    //     fwrite($fp, $this->signedJSON);
-    //     rewind($fp);
+        $ser = new Serializer("asecret");
+        $wasRead = $ser->load($fp);
 
-    //     $ser = new Serializer("asecret");
-    //     $wasRead = $ser->load($tmpfname);
+        $this->assertEquals($this->complex, $wasRead);
+    }
 
-    //     $this->assertEquals($this->complex, $wasRead);
-    // }
+    public function testSerializer_loadUnsafe_shouldReadSignedPayloadFromFile()
+    {
+        $fp = fopen('php://temp', 'r+');
+        fwrite($fp, $this->signedJSON);
+        rewind($fp);
+
+        $ser = new Serializer("asecret");
+        $wasRead = $ser->load_unsafe($fp);
+
+        $this->assertEquals([true, $this->complex], $wasRead);
+    }
+
+    public function testSerializer_loadUnsafeSignComplaint_shouldReturnPayloadWithFlag()
+    {
+        $fp = fopen('php://temp', 'r+');
+        fwrite($fp, $this->unSignedJSON);
+        rewind($fp);
+
+        $ser = new Serializer("asecret", null, null, 'angrySigner');
+        $wasRead = $ser->load_unsafe($fp);
+
+        $this->assertEquals([false, $this->complex], $wasRead);
+    }
+
+    public function testSerializer_loadUnsafeSignComplaintAndBadPayload_shouldMentionThingsAreBad()
+    {
+        $fp = fopen('php://temp', 'r+');
+        fwrite($fp, $this->unSignedJSON);
+        rewind($fp);
+        $angry = new angrySerializer();
+
+        $ser = new Serializer("asecret", null, $angry, 'angrySigner');
+        $wasRead = $ser->load_unsafe($fp);
+
+        $this->assertEquals([false, null], $wasRead);
+    }
 
     public function testSerializer_serializerThrowsAtLoads_shouldFail()
     {
-        // $this->markTestIncomplete('Upstream has + instead of . for string concat.'.
-        //     ' Need to fix that and update ths test.');
-
         $this->setExpectedException('ItsDangerous\BadData\BadPayload');
         $angry = new angrySerializer();
 
@@ -119,4 +153,10 @@ class SerializerTest extends PHPUnit_Framework_TestCase
 class angrySerializer {
     public function loads($input) {throw new Exception('no.');}
     public function dumps($input) {return 'no.';}
+}
+
+class angrySigner {
+    public function unsign($payload) {
+        throw new BadSignature('no.', $payload);
+    }
 }
