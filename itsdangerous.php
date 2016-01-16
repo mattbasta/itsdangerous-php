@@ -3,15 +3,6 @@
 define("EPOCH", 1293840000);
 require 'vendor/autoload.php';
 
-function constant_time_compare($val1, $val2) {
-    $s = strlen($val1);
-    if($s != strlen($val2)) return false;
-    $result = 0;
-    for($i = 0; $i < $s; $i++)
-        $result |= ord($val1[$i]) ^ ord($val2[$i]);
-    return $result == 0;
-}
-
 function base64_encode_($data) {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
