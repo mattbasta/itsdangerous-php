@@ -6,7 +6,7 @@ use ItsDangerous\BadData\BadPayload;
 
 class Serializer {
 
-    public static $default_signer = 'ItsDangerous\Signer\Signer';
+    public $default_signer = 'ItsDangerous\Signer\Signer';
     public static function default_serializer() {return new SimpleJsonSerializer();}
 
     protected $secret_key;
@@ -20,7 +20,7 @@ class Serializer {
             $serializer = self::default_serializer();
         $this->serializer = $serializer;
         if (is_null($signer))
-            $signer = self::$default_signer;
+            $signer = $this->default_signer;
         $this->signer = $signer;
     }
 
@@ -86,33 +86,4 @@ class Serializer {
         return $this->loads_unsafe(fread($f, $stats['size']), $salt);
     }
 
-    /*
-    public function _urlsafe_load_payload($payload){
-        $decompress = false;
-        if ($payload[0] == '.'){
-            $payload = substr($payload, 1);
-            $decompress = true;
-        }
-        $json = base64_decode_($payload);
-        if ($decompress){
-            $json = gzuncompress($json);
-
-        }
-        return $json;
-    }
-
-    public function _urlsafe_dump_payload($json){
-        $is_compressed = false;
-        $compressed = gzcompress($json);
-        if (strlen($compressed) < strlen($json) - 1){
-            $json = $compressed;
-            $is_compressed = true;
-        }
-        $base64d = base64_encode_($json);
-        if ($is_compressed){
-            $base64d = '.' . $base64d;
-        }
-        return $base64d;
-    }
-    */
 }

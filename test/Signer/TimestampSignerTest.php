@@ -88,7 +88,7 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
         $ts->unsign('hello.7KTthSs1fJgtbigPvFpQH1bpoGA');
     }
 
-    public function testTimestampSigner_unsignMissingTimestampTampered_shouldFail()
+    public function testTimestampSigner_unsignTimestampTampered_shouldFail()
     {
         $this->setExpectedException('ItsDangerous\BadData\BadSignature');
 
@@ -97,6 +97,17 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
 
         $ts = new TimestampSigner("secret");
         $ts->unsign('hillo.7KTthSs1fJgtbigPvFpQH1bpoGA');
+    }
+
+    public function testUnsign_expiredSignature_ShouldComplain()
+    {
+        $this->setExpectedException('ItsDangerous\BadData\SignatureExpired');
+
+        $nowString = '2016-01-10 08:13:31';
+        Carbon::setTestNow(new Carbon($nowString));
+
+        $ts = new TimestampSigner("another_secret");
+        $ts->unsign('haldo.CXOj7w.soK7_HnTROV4Lew0zlxDV0mUE8I', 30);
     }
 
 }

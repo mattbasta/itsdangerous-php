@@ -52,7 +52,7 @@ class SerializerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($this->signedJSON, $wasWritten);
     }
 
-    public function testSerializer_load_shouldReadSignedPayloadFromFile()
+    public function testLoad_shouldReadSignedPayloadFromFile()
     {
         $fp = fopen('php://temp', 'r+');
         fwrite($fp, $this->signedJSON);
@@ -64,7 +64,7 @@ class SerializerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($this->complex, $wasRead);
     }
 
-    public function testSerializer_loadUnsafe_shouldReadSignedPayloadFromFile()
+    public function testLoadUnsafe_shouldReadSignedPayloadFromFile()
     {
         $fp = fopen('php://temp', 'r+');
         fwrite($fp, $this->signedJSON);
@@ -76,7 +76,7 @@ class SerializerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals([true, $this->complex], $wasRead);
     }
 
-    public function testSerializer_loadUnsafeSignComplaint_shouldReturnPayloadWithFlag()
+    public function testLoadUnsafe_signComplaint_shouldReturnPayloadWithFlag()
     {
         $fp = fopen('php://temp', 'r+');
         fwrite($fp, $this->unSignedJSON);
@@ -88,7 +88,7 @@ class SerializerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals([false, $this->complex], $wasRead);
     }
 
-    public function testSerializer_loadUnsafeSignComplaintAndBadPayload_shouldMentionThingsAreBad()
+    public function testLoadUnsafe_signComplaintAndBadPayload_shouldMentionThingsAreBad()
     {
         $fp = fopen('php://temp', 'r+');
         fwrite($fp, $this->unSignedJSON);
@@ -110,41 +110,45 @@ class SerializerTest extends PHPUnit_Framework_TestCase
         $cp = $ser->loads($this->signedJSON);
     }
 
-    public function testSerializer_loadsUnsafe_happyFunFunTime()
+    public function testLoadsUnsafe_happyFunFunTime()
     {
         $ser = new Serializer("asecret");
         $cp = $ser->loads_unsafe($this->signedJSON);
         $this->assertEquals([true, $this->complex], $cp);
     }
 
-    public function testSerializer_loadsUnsafeWrongSecret_shouldNoteUntrustworthy()
+    public function testLoadsUnsafe_wrongSecret_shouldNoteUntrustworthy()
     {
         $ser = new Serializer("notasecret");
         $cp = $ser->loads_unsafe($this->signedJSON);
         $this->assertEquals([false, $this->complex], $cp);
     }
 
-    public function testSerializer_loadsUnsafeTamperedData_shouldNoteUntrustworthy()
+    public function testLoadsUnsafe_tamperedData_shouldNoteUntrustworthy()
     {
         $ser = new Serializer("asecret");
         $cp = $ser->loads_unsafe($this->tamperedJSON);
         $this->assertEquals(false, $cp[0]);
     }
 
-    public function testSerializer_loadsUnsafeExplodingTeaPot_shouldNoteThatSomethingBeWrong()
+    public function testLoadsUnsafe_explodingTeaPot_shouldNoteThatSomethingBeWrong()
     {
         $angry = new angrySerializer();
 
         $ser = new Serializer("asecret", 'itsdangerous', $angry);
         $cp = $ser->loads_unsafe($this->signedJSON);
+
+        $this->assertEquals([false, null], $cp);
     }
 
-    public function testSerializer_loadsUnsafeBadSalt_shouldNoteThatSomethingBeWrong()
+    public function testLoadsUnsafe_badSalt_shouldNoteThatSomethingBeWrong()
     {
         $angry = new angrySerializer();
 
         $ser = new Serializer("asecret", 'itsdangerous', $angry);
         $cp = $ser->loads_unsafe($this->signedJSON);
+
+        $this->assertEquals([false, null], $cp);
     }
 
 }
