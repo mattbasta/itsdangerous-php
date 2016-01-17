@@ -1,6 +1,6 @@
 <?php
 
-use Carbon\Carbon;
+use ItsDangerous\Support\ClockProvider;
 use ItsDangerous\Signer\TimedSerializer;
 
 class TimedSerializerTest extends PHPUnit_Framework_TestCase
@@ -21,13 +21,13 @@ class TimedSerializerTest extends PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->nowString = '2016-01-10 08:12:31';
-        $this->now = new Carbon($this->nowString);
-        Carbon::setTestNow($this->now);
+        $this->now = new DateTime($this->nowString);
+        ClockProvider::setTestNow($this->now);
     }
 
     public function tearDown()
     {
-        Carbon::setTestNow();
+        ClockProvider::setTestNow();
     }
 
     public function testDefaultSigner_usesTimedSigner()
@@ -59,7 +59,7 @@ class TimedSerializerTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException('ItsDangerous\BadData\SignatureExpired');
 
         $nowString = '2016-01-10 08:13:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         $ser = new TimedSerializer("asecret");
         $c = $ser->loads($this->signedJSON, 30);
@@ -128,7 +128,7 @@ class TimedSerializerTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException('ItsDangerous\BadData\SignatureExpired');
 
         $nowString = '2016-01-10 08:13:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
 
         $ser = new TimedSerializer("asecret");

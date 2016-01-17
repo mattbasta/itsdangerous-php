@@ -6,12 +6,12 @@ use ItsDangerous\BadData\BadSignature;
 use ItsDangerous\BadData\BadTimeSignature;
 use ItsDangerous\BadData\SignatureExpired;
 
-use Carbon\Carbon;
+use ItsDangerous\Support\ClockProvider;
 
 class TimestampSigner extends Signer {
 
     public function get_timestamp() {
-        return Carbon::now()->timestamp - EPOCH;
+        return ClockProvider::getTimestamp();
     }
 
     public function timestamp_to_datetime($ts) {

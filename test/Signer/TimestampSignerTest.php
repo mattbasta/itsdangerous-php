@@ -1,19 +1,19 @@
 <?php
 
-use Carbon\Carbon;
+use ItsDangerous\Support\ClockProvider;
 use ItsDangerous\Signer\TimestampSigner;
 
 class TimestampSignerTest extends PHPUnit_Framework_TestCase
 {
     public function tearDown()
     {
-        Carbon::setTestNow();
+        ClockProvider::setTestNow();
     }
 
     public function testTimestampSigner_signAndUnsign_shouldBeCongruent()
     {
         $nowString = '2016-01-10 08:12:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         $ts = new TimestampSigner("another_secret");
         $foo = $ts->sign("haldo");
@@ -26,8 +26,8 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
     public function testTimestampSigner_wantTimestampReturned_shouldReturnTimestamp()
     {
         $nowString = '2016-01-10 08:12:31';
-        $now = new Carbon($nowString);
-        Carbon::setTestNow($now);
+        $now = new DateTime($nowString);
+        ClockProvider::setTestNow($now);
 
         $ts = new TimestampSigner("another_secret");
         $foo = $ts->sign("haldo");
@@ -51,14 +51,14 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
     public function testTimestampSigner_signAndValidateLater_shouldFail()
     {
         $nowString = '2016-01-10 08:12:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         $ts = new TimestampSigner("another_secret");
         $foo = $ts->sign("haldo");
 
         // an hour later...
         $nowString = '2016-01-10 09:12:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         // 30 minute expiry
         $valid = $ts->validate($foo, 30);
@@ -71,7 +71,7 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException('ItsDangerous\BadData\BadTimeSignature');
 
         $nowString = '2016-01-10 08:12:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         $ts = new TimestampSigner("another_secret");
         $ts->unsign('haldo.CXOj7v.soK7_HnTROV4Lew0zlxDV0mUE8I');
@@ -82,7 +82,7 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException('ItsDangerous\BadData\BadTimeSignature');
 
         $nowString = '2016-01-10 08:12:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         $ts = new TimestampSigner("secret");
         $ts->unsign('hello.7KTthSs1fJgtbigPvFpQH1bpoGA');
@@ -93,7 +93,7 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException('ItsDangerous\BadData\BadSignature');
 
         $nowString = '2016-01-10 08:12:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         $ts = new TimestampSigner("secret");
         $ts->unsign('hillo.7KTthSs1fJgtbigPvFpQH1bpoGA');
@@ -104,7 +104,7 @@ class TimestampSignerTest extends PHPUnit_Framework_TestCase
         $this->setExpectedException('ItsDangerous\BadData\SignatureExpired');
 
         $nowString = '2016-01-10 08:13:31';
-        Carbon::setTestNow(new Carbon($nowString));
+        ClockProvider::setTestNow(new DateTime($nowString));
 
         $ts = new TimestampSigner("another_secret");
         $ts->unsign('haldo.CXOj7w.soK7_HnTROV4Lew0zlxDV0mUE8I', 30);
