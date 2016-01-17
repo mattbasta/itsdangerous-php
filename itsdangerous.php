@@ -1,6 +1,5 @@
 <?php
 
-define("EPOCH", 1293840000);
 require 'vendor/autoload.php';
 
 function base64_encode_($data) {

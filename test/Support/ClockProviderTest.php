@@ -23,4 +23,14 @@ class ClockProviderTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals($dt->getTimestamp() - ClockProvider::$EPOCH, $testnow);
     }
+
+    public function testTimestampToDate_suchMagic()
+    {
+        $dt = new DateTime('August 10, 2020 3:00p');
+        $timestamp = $dt->getTimestamp() - ClockProvider::$EPOCH;
+
+        $dtft = ClockProvider::timestampToDate($timestamp);
+
+        $this->assertEquals($dt, $dtft);
+    }
 }

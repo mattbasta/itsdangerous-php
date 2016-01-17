@@ -15,7 +15,7 @@ class TimestampSigner extends Signer {
     }
 
     public function timestamp_to_datetime($ts) {
-        return \DateTime::createFromFormat("U", $ts + EPOCH, new \DateTimeZone("UTC"));
+        return ClockProvider::timestampToDate($ts);
     }
 
     public function sign($value) {

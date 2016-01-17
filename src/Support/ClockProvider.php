@@ -34,4 +34,8 @@ class ClockProvider
         static::$now = $dt;
     }
 
+    public static function timestampToDate($ts)
+    {
+        return \DateTime::createFromFormat("U", $ts + self::$EPOCH, new \DateTimeZone("UTC"));
+    }
 }
