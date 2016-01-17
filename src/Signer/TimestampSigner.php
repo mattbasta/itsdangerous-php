@@ -41,9 +41,7 @@ class TimestampSigner extends Signer {
             throw new BadTimeSignature("timestamp missing", $result);
         }
 
-        $exploded = explode($this->sep, $result);
-        $timestamp = array_pop($exploded);
-        $value = implode($this->sep, $exploded);
+        list($timestamp, $value) = $this->pop_signature($result);
 
         $timestamp = bytes_to_int(base64_decode_($timestamp));
 
@@ -52,11 +50,6 @@ class TimestampSigner extends Signer {
         if (!is_null($sig_err)) {
             throw new BadTimeSignature((string) $sig_err, $value, $timestamp);
         }
-
-        # Signature was okay but the timestamp is actually not there or
-        # malformed.  Should not happen, but well.  We handle it nonetheless
-        if (is_null($timestamp))
-            throw new BadTimeSignature('Malformed timestamp', $value);
 
         if(!is_null($max_age)) {
             $age = $this->get_timestamp() - $timestamp;

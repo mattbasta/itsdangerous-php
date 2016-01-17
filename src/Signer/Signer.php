@@ -62,9 +62,7 @@ class Signer {
         if(strpos($signed_value, $this->sep) === false) {
             throw new BadSignature("No \"{$this->sep}\" found in value");
         }
-        $exploded = explode($this->sep, $signed_value);
-        $sig = array_pop($exploded);
-        $value = implode($this->sep, $exploded);
+        list($sig, $value) = $this->pop_signature($signed_value);
         if($this->verify_signature($value, $sig)) {
             return $value;
         }
@@ -80,4 +78,11 @@ class Signer {
         }
     }
 
+    protected function pop_signature($signed_value)
+    {
+        $exploded = explode($this->sep, $signed_value);
+        $sig = array_pop($exploded);
+        $value = implode($this->sep, $exploded);
+        return array($sig, $value);
+    }
 }
