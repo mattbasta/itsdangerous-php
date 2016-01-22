@@ -4,14 +4,14 @@ require("itsdangerous.php");
 
 define("NL", (php_sapi_name() == 'cli') ? "\n" : "<br />");
 
-$s = new Signer("secret");
+$s = new ItsDangerous\Signer\Signer("secret");
 $foo = $s->sign("hello");
 echo $foo, NL;
 
 $bar = $s->unsign($foo);
 echo $bar, NL;
 
-$ts = new TimestampSigner("another_secret");
+$ts = new ItsDangerous\Signer\TimestampSigner("another_secret");
 $foo2 = $ts->sign("haldo");
 echo $foo2, NL;
 
@@ -29,7 +29,7 @@ $complex = array(
     array(1.1, 2.2, "3.3")
 );
 
-$ser = new Serializer("asecret");
+$ser = new ItsDangerous\Signer\Serializer("asecret");
 $c = $ser->dumps($complex);
 echo $c, NL;
 
@@ -37,7 +37,7 @@ $cp = $ser->loads($c);
 var_dump($cp);
 echo NL;
 
-$s2 = new Serializer("whatevs");
+$s2 = new ItsDangerous\Signer\Serializer("whatevs");
 try {
     echo $s2->loads($c), NL;
     echo "FAILED", NL;
