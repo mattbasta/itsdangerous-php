@@ -45,7 +45,7 @@ class Signer {
     public function get_signature($value) {
         $key = $this->derive_key();
         $sig = $this->algorithm->get_signature($key, $value);
-        return base64_encode_($sig);
+        return $this->base64_encode_($sig);
     }
 
     public function sign($value) {
@@ -54,7 +54,7 @@ class Signer {
 
     public function verify_signature($value, $sig) {
         $key = $this->derive_key();
-        $sig = base64_decode_($sig);
+        $sig = $this->base64_decode_($sig);
         return $this->algorithm->verify_signature($key, $value, $sig);
     }
 
@@ -85,4 +85,14 @@ class Signer {
         $value = implode($this->sep, $exploded);
         return array($sig, $value);
     }
+
+    public function base64_encode_($data) {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    public function base64_decode_($data) {
+        return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
+    }
+
+
 }

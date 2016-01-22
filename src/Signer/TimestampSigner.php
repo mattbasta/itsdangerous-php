@@ -19,7 +19,7 @@ class TimestampSigner extends Signer {
     }
 
     public function sign($value) {
-        $timestamp = base64_encode_(int_to_bytes($this->get_timestamp()));
+        $timestamp = $this->base64_encode_($this->int_to_bytes($this->get_timestamp()));
         $value = $value . $this->sep . $timestamp;
         return $value . $this->sep . $this->get_signature($value);
     }
@@ -43,7 +43,7 @@ class TimestampSigner extends Signer {
 
         list($timestamp, $value) = $this->pop_signature($result);
 
-        $timestamp = bytes_to_int(base64_decode_($timestamp));
+        $timestamp = $this->bytes_to_int($this->base64_decode_($timestamp));
 
         # Signature is *not* okay.  Raise a proper error now that we have
         # split the value and the timestamp.
@@ -74,6 +74,25 @@ class TimestampSigner extends Signer {
         } catch(\Exception $ex) {
             return false;
         }
+    }
+
+    public function int_to_bytes($num) {
+        $output = "";
+        while($num > 0) {
+            $output .= chr($num & 0xff);
+            $num >>= 8;
+        }
+        return strrev($output);
+    }
+
+    public function bytes_to_int($bytes) {
+        $output = 0;
+        foreach(str_split($bytes) as $byte) {
+            if($output > 0)
+                $output <<= 8;
+            $output += ord($byte);
+        }
+        return $output;
     }
 
 }
